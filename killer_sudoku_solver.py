@@ -1,7 +1,18 @@
 import time
 
 
-def get_possible_combinations(length, min_value, max_value):
+def get_possible_combinations(length: int, min_value: int, max_value: int) -> list:
+    """To construct the map from sum to possible values
+
+    Args:
+        length (int): max length of int list, usually N-1
+        min_value (int): start value, usually 1 for the first call
+        max_value (int): end value for generation, usually N+1 
+
+    Yields:
+        list of int: generated value list
+    """
+
     for i in range(min_value, max_value):
         if i + 1 < max_value and length != 1:
             for v in get_possible_combinations(length - 1, i + 1, max_value):
@@ -17,7 +28,12 @@ class Cell:
         self.tested_values = []
         self.candidates = set()
 
-    def get_next_candidate(self):
+    def get_next_candidate(self) -> int:
+        """Get the next available candidate from set, order not guaranteed
+
+        Returns:
+            int: next available candidate
+        """
 
         if not self.is_fixed and len(self.candidates) > 0:
             for e in self.candidates:
@@ -26,6 +42,8 @@ class Cell:
         return -1
 
     def reset_values(self):
+        """Reset all the values to the initial state for backtracing
+        """
 
         if self.is_fixed:
             return
@@ -35,7 +53,13 @@ class Cell:
 
         self.value = 0
 
-    def unset_value(self):
+    def unset_value(self) -> bool:
+        """Reset the last candidate being tried
+
+        Returns:
+            bool: if the operation succeed
+        """
+
         if self.is_fixed:
             return False
 
@@ -49,8 +73,22 @@ class Cell:
             self.value = 0
         else: 
             self.value = self.tested_values[-1]
+        return True
 
-    def set_value(self, value):
+    def set_value(self, value: int) -> bool:
+        """Set the cell to a certain value.
+
+        If the cell is initialized, it would always return False
+        If the value is not a valid candidate, it would return False
+        It would only succeed when the value is in the candidate list
+
+        Args:
+            value (int): The number to be filled
+
+        Returns:
+            bool: if the operation succeed
+        """
+        
         if self.is_fixed or value not in self.candidates:
             return False
         
@@ -61,7 +99,7 @@ class Cell:
 
 class Board:
 
-    def __init__(self, N, matrix, cage_constraints):
+    def __init__(self, N: int, matrix: list, cage_constraints: list):
 
         # list all possible combinations for certain length and sum
         self.length_sum_candidates_map = dict([(l, {}) for l in range(2, N)])
@@ -114,7 +152,19 @@ class Board:
                             if value in neighbour.candidates:
                                 neighbour.candidates.remove(value)
 
-    def set_item(self, index, value):
+    def fill_cell(self, index: tuple, value: int) -> bool:
+        """Fill the cell.
+
+        The cell would only be filled if it does not violate existing constraints.
+
+        Args:
+            index (tuple): the index of the cell
+            value (int): the number to fill
+
+        Returns:
+            bool: if the operation succeed
+        """
+
         cell = self.__getitem__(index)
         row, col = index
 
@@ -161,20 +211,28 @@ class Board:
             return status
         
         if current_sum != target_sum:
-            # cell.unset_value()
             return False
 
         return True
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Cell:
+        """Get the cell by index. Return None if the index is not valid
+
+        Args:
+            index (int): index of the cell
+
+        Returns:
+            Cell: The cell
+        """
+
         if index[0] <= N and index[1] <= N:
             return self._board[index[0] - 1][index[1] - 1]
         return None
 
-    def is_cell_fixed(self, index):
-        return self.__getitem__(index).is_fixed
-
     def print(self):
+        """Helper function for printing the current value of the matrix
+        """
+        
         for row in self._board:
             for cell in row:
                 print(cell.value, end="\t")
@@ -194,9 +252,9 @@ class SudokuPuzzle:
         self.back_track_count = 0
 
     def solve(self):
-        start = time.clock()
+        start = time.process_time()
         result = self.solve_index((1, 1))
-        t = time.clock() - start
+        t = time.process_time() - start
         self.board.print()
 
         if result:
@@ -225,7 +283,7 @@ class SudokuPuzzle:
                 if candidate < 0:
                     break
 
-                status = self.board.set_item(index, candidate)
+                status = self.board.fill_cell(index, candidate)
                 if status:
                     # print("Set value at index ", index, candidate)
                     # print("Starting next index ", next_index)
