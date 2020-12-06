@@ -101,13 +101,16 @@ class Board:
         # if all other cells in this cage are filled, check the sum constraints
         # otherwise, fill the cage
         current_sum = 0
-        for cell in cells:
-            value = self._safe_get(cell).value
+        for c_idx in cells:
+            val = self._safe_get(c_idx).value
 
-            if value == 0:
-                return status
+            if val == 0:
+                return True
 
-            current_sum += value
+            if val == value and index != c_idx:
+                return False
+
+            current_sum += val
         
         if current_sum != target_sum:
             return False
