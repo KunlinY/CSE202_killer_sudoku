@@ -28,24 +28,24 @@ class Board:
         for s, cells in cage_constraints:
             l = len(cells)
             for cell in cells:
-                if not self.__getitem__(cell).is_fixed:
-                    self.__getitem__(cell).candidates = set(sum(self.length_sum_candidates_map[l][s], []))
+                if not self._safe_get(cell).is_fixed:
+                    self._safe_get(cell).candidates = set(sum(self.length_sum_candidates_map[l][s], []))
                     self.cell_cage_map[cell] = (s, cells)
 
         # trim candidates based on given row, column and nonet constraints
         for row in range(1, N + 1):
             for col in range(1, N + 1):
-                cell = self.__getitem__((row, col))
+                cell = self._safe_get((row, col))
                 if cell.is_fixed:
                     value = cell.value
                     for i in range(1, N  + 1):
                         # neighbour in the same column
-                        neighbour = self.__getitem__((i, col))
+                        neighbour = self._safe_get((i, col))
                         if value in neighbour.candidates:
                             neighbour.candidates.remove(value)
 
                         # neighbour in the same row
-                        neighbour = self.__getitem__((row, i))
+                        neighbour = self._safe_get((row, i))
                         if value in neighbour.candidates:
                             neighbour.candidates.remove(value)
 
@@ -53,13 +53,14 @@ class Board:
                     nonet_col = int((col - 1) / 3) * 3 + 1
                     for r in range(nonet_row, nonet_row + 3):
                         for c in range(nonet_col, nonet_col + 3):
-                            neighbour = self.__getitem__((r, c))
+                            neighbour = self._safe_get((r, c))
                             if value in neighbour.candidates:
                                 neighbour.candidates.remove(value)
 
     def fill_cell(self, index: tuple, value: int) -> bool:
         """Fill the cell.
 
+        TODO potential performance bottleneck 
         The cell would only be filled if it does not violate existing constraints.
 
         Args:
@@ -70,7 +71,7 @@ class Board:
             bool: if the operation succeed
         """
 
-        cell = self.__getitem__(index)
+        cell = self._safe_get(index)
         row, col = index
 
         if not cell:
@@ -82,20 +83,17 @@ class Board:
             return status
 
         for i in range(1, self.N + 1):
-            neighbour = self.__getitem__((i, col))
-            if neighbour.value == cell.value and i != row:
+            if i != row and self._safe_get((i, col)).value == cell.value:
                 return False
 
-            neighbour = self.__getitem__((row, i))
-            if neighbour.value == cell.value and i != col:
+            if i != col and self._safe_get((row, i)).value == cell.value:
                 return False
 
             nonet_row = int((row - 1) / 3) * 3 + 1
             nonet_col = int((col - 1) / 3) * 3 + 1
             for r in range(nonet_row, nonet_row + 3):
                 for c in range(nonet_col, nonet_col + 3):
-                    neighbour = self.__getitem__((r, c))
-                    if neighbour.value == cell.value and r != row and c != col:
+                    if r != row and c != col and self._safe_get((r, c)).value == cell.value:
                         return False
 
         target_sum, cells = self.cell_cage_map[index]
@@ -104,21 +102,30 @@ class Board:
         # otherwise, fill the cage
         current_sum = 0
         for cell in cells:
-            value = self.__getitem__(cell).value
+            value = self._safe_get(cell).value
 
             if value == 0:
-                current_sum = -1
-                break
+                return status
 
             current_sum += value
-
-        if current_sum < 0:
-            return status
         
         if current_sum != target_sum:
             return False
 
         return True
+
+    def _safe_get(self, index: int) -> Cell:
+        """Get the cell by index. It is ensured to proived valid index. 
+        
+        Used by class method only. For speed up. 
+
+        Args:
+            index (int): index of the cell
+
+        Returns:
+            Cell: The cell
+        """
+        return self._board[index[0] - 1][index[1] - 1]
 
     def __getitem__(self, index: int) -> Cell:
         """Get the cell by index. Return None if the index is not valid
@@ -131,7 +138,7 @@ class Board:
         """
 
         if index[0] <= self.N and index[1] <= self.N:
-            return self._board[index[0] - 1][index[1] - 1]
+            return self._safe_get(index)
         return None
 
     def print(self):

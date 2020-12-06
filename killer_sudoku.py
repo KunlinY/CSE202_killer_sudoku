@@ -13,7 +13,7 @@ class KillerSudoku:
         assert all(0 <= cell <= N for row in initial_matrix for cell in row), "Initial matrix value is invalid"
         
         KillerSudoku.N = N
-        self.board = Board(N, initial_matrix, cage_constraints)
+        self.board: Board = Board(N, initial_matrix, cage_constraints)
         self.back_track_count = 0
 
     def solve(self):
@@ -27,34 +27,31 @@ class KillerSudoku:
         else:
             print("No solution!")
         print("Time elapse: ", t)
+        print("Back track count ", self.back_track_count)
 
     def solve_index(self, index):
         cell = self.board[index]
+            
+        # The end of the search
+        if cell == None:
+            return True
+
         next_index = (index[0], index[1] + 1) if index[1] != self.N else (index[0] + 1, 1)
         while True:
-            
-            if cell == None:
-                return True
 
             if cell.is_fixed:
-                if self.board[next_index]:
-                    return self.solve_index(next_index)
-                else:
-                    return True
-
+                # If the cell is initialized, move to next cell
+                return self.solve_index(next_index)
             else:
                 candidate = cell.get_next_candidate()
 
                 if candidate < 0:
+                    # No available candidates, break to back track
                     break
 
                 status = self.board.fill_cell(index, candidate)
-                if status:
-                    # print("Set value at index ", index, candidate)
-                    # print("Starting next index ", next_index)
-                    # self.board.print()
-                    if self.solve_index(next_index):
-                        return True
+                if status and self.solve_index(next_index):
+                    return True
 
         self.back_track_count += 1
         cell.reset_values()

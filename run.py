@@ -1,6 +1,7 @@
 import time
 
 from killer_sudoku import KillerSudoku
+import cProfile
 
 
 if __name__ == "__main__":
@@ -47,6 +48,8 @@ if __name__ == "__main__":
         (13, [(9, 5), (9, 6), (9, 7)]),
         (17, [(9, 8), (9, 9)]),
     ]
+
+    cProfile.run('KillerSudoku(N, initial_matrix, cage_constraints).solve()')
 
     sudoku = KillerSudoku(N, initial_matrix, cage_constraints)
     sudoku.solve()
