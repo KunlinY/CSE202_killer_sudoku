@@ -116,6 +116,7 @@ class Board:
 
     def set_item(self, index, value):
         cell = self.__getitem__(index)
+        row, col = index
 
         if not cell:
             return False
@@ -125,24 +126,22 @@ class Board:
         if not status:
             return status
 
-        for row in range(1, N + 1):
-            for col in range(1, N + 1):
-                for i in range(1, N + 1):
-                    neighbour = self.__getitem__((i, col))
-                    if neighbour.value == cell.value and col != index[1]:
-                        return False
+        for i in range(1, N + 1):
+            neighbour = self.__getitem__((i, col))
+            if neighbour.value == cell.value and i != row:
+                return False
 
-                    neighbour = self.__getitem__((row, i))
-                    if neighbour.value == cell.value and row != index[0]:
-                        return False
+            neighbour = self.__getitem__((row, i))
+            if neighbour.value == cell.value and i != col:
+                return False
 
-                nonet_row = int((row - 1) / 3) * 3 + 1
-                nonet_col = int((col - 1) / 3) * 3 + 1
-                for r in range(nonet_row, nonet_row + 3):
-                    for c in range(nonet_col, nonet_col + 3):
-                        neighbour = self.__getitem__((r, c))
-                        if neighbour.value == cell.value and r != index[0] and c != index[1]:
-                            return False
+            nonet_row = int((row - 1) / 3) * 3 + 1
+            nonet_col = int((col - 1) / 3) * 3 + 1
+            for r in range(nonet_row, nonet_row + 3):
+                for c in range(nonet_col, nonet_col + 3):
+                    neighbour = self.__getitem__((r, c))
+                    if neighbour.value == cell.value and r != row and c != col:
+                        return False
 
         target_sum, cells = self.cell_cage_map[index]
 
@@ -170,7 +169,7 @@ class Board:
     def __getitem__(self, index):
         if index[0] <= N and index[1] <= N:
             return self._board[index[0] - 1][index[1] - 1]
-        return N
+        return None
 
     def is_cell_fixed(self, index):
         return self.__getitem__(index).is_fixed
@@ -210,6 +209,9 @@ class SudokuPuzzle:
         cell = self.board[index]
         next_index = (index[0], index[1] + 1) if index[1] != self.N else (index[0] + 1, 1)
         while True:
+            
+            if cell == None:
+                return True
 
             if cell.is_fixed:
                 if self.board[next_index]:
@@ -225,8 +227,9 @@ class SudokuPuzzle:
 
                 status = self.board.set_item(index, candidate)
                 if status:
-                    print("Set value at index ", index, candidate)
-                    self.board.print()
+                    # print("Set value at index ", index, candidate)
+                    # print("Starting next index ", next_index)
+                    # self.board.print()
                     if self.solve_index(next_index):
                         return True
 
