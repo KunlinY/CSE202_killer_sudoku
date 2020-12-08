@@ -32,6 +32,12 @@ class Board:
                     self._safe_get(cell).candidates = set(sum(self.length_sum_candidates_map[l][s], []))
                     self.cell_cage_map[cell] = (s, cells)
 
+        for row in range(1, N + 1):
+            for col in range(1, N + 1):
+                cell = self._safe_get((row, col))
+                if len(cell.candidates) == 0:
+                    cell.candidates = set(range(1, N + 1))
+
         # trim candidates based on given row, column and nonet constraints
         for row in range(1, N + 1):
             for col in range(1, N + 1):
@@ -95,6 +101,9 @@ class Board:
                 for c in range(nonet_col, nonet_col + 3):
                     if r != row and c != col and self._safe_get((r, c)).value == cell.value:
                         return False
+
+        if index not in self.cell_cage_map.keys():
+            return True
 
         target_sum, cells = self.cell_cage_map[index]
 
