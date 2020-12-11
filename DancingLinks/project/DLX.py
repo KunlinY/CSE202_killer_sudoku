@@ -1,21 +1,24 @@
 import numpy as np
 from .Node import Node
+import math
 
 class DLX:
-    def __init__(self):
+    def __init__(self, N):
         self.head = Node(None,0)
+        self.N = N
+        self.box = int(math.sqrt(N))
         # lambda functions that define the constraints on the sudoku
         # value is the value passed to the function and itemIndex is the unique value index in the 81 boxes
-        self.row_constraint = lambda itemIndex, value: 81 + (itemIndex // 9) * 9 + value
-        self.col_constraint = lambda itemIndex, value: 162 + (itemIndex % 9) * 9 + value
-        self.box_constraint = lambda itemIndex, value: 243 + (itemIndex // 27) * 27 + (itemIndex % 9) // 3 * 9 + value
+        self.row_constraint = lambda itemIndex, value: N*N + (itemIndex // N) * N + value
+        self.col_constraint = lambda itemIndex, value: N*N*2 + (itemIndex % N) * N + value
+        self.box_constraint = lambda itemIndex, value: N*N*3 + (itemIndex // (self.box*N)) * (self.box*N) + (itemIndex % self.N) // self.box * self.N + value
 
     # creates an exact cover matrix of a sudoku grid
     def create_matrix(self, sudokArr):
         head = self.head
         cols = [head] # store the column headers in a list for easier access
         # Construct column headers as a doubly circular linked list
-        for i in range(324): # the number of columns for a 9x9 matrix given the 4 constraints (4*9*9)
+        for i in range(4*self.N*self.N): # the number of columns for a 9x9 matrix given the 4 constraints (4*9*9)
             current = Node(i+1, None)
             current.right = head # re-do the new column loop back to the head column
             current.left = head.left
@@ -25,24 +28,24 @@ class DLX:
 
         # iterates through each value in the sudoku
         for row in range(len(sudokArr)):
-            for chr in range(9):
+            for chr in range(self.N):
                 # takes the unique positional id of the value in the sudoku
-                chrID = row*9 + chr
+                chrID = row*self.N + chr
                 # if the value is 0 then there is no given value and links for the possibilities at that position are created.
-                if sudokArr[row][chr] == 0:
-                    for j in range(9):
+                if sudokArr[row-1][chr-1] == 0:
+                    for j in range(self.N):
                         self.createNodeLinks(chrID, j+1, cols)
                 else:
-                    self.createNodeLinks(chrID, sudokArr[row][chr], cols)
+                    self.createNodeLinks(chrID, sudokArr[row-1][chr-1], cols)
 
     # for each possible value of the sudoku that is not yet found, createLinks creates links based on the sudoku constraints for each value
     # and then adds the links to the DLX structure re-assigning links so that the structure is maintained.
     def createNodeLinks(self, index, value, cols):
         # Node(col, row)
-        cellNode = Node(cols[index + 1], index*9 + value)
-        rowNode = Node(cols[self.row_constraint(index, value)], index*9 + value)
-        colNode = Node(cols[self.col_constraint(index, value)], index*9 + value)
-        areaNode = Node(cols[self.box_constraint(index, value)], index*9 + value)
+        cellNode = Node(cols[index + 1], index*self.N + value)
+        rowNode = Node(cols[self.row_constraint(index, value)], index*self.N + value)
+        colNode = Node(cols[self.col_constraint(index, value)], index*self.N + value)
+        areaNode = Node(cols[self.box_constraint(index, value)], index*self.N + value)
 
         # Link all the nodes into a single row in the form of a doubly linked list
         cellNode.right, cellNode.left = rowNode, areaNode

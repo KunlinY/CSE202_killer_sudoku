@@ -1,13 +1,16 @@
 import numpy as np
 from .DLX import DLX
 from .Node import Node
+import time
 
 class Sudoku:
     def solve(self, sudokArr):
-        solver = DLX()
+        solver = DLX(len(sudokArr[0]))
         solver.create_matrix(sudokArr)
+        start = time.process_time()
         dlx_solution, found = solver.search()
-        return dlx_solution, found
+        t = time.process_time() - start
+        return dlx_solution, found, t
 
     # converts the quadruple linked list solution form back to numpy array
     def returnSol(self, solved, found, pretty = False, autoPrint = False):

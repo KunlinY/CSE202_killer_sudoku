@@ -8,12 +8,12 @@ class KillerSudoku:
 
     N = 9
     
-    def __init__(self, N, initial_matrix, cage_constraints):
+    def __init__(self, N, initial_matrix, cage_constraints, pre_sum=True):
         assert (len(initial_matrix) == N and all(len(row) == N for row in initial_matrix)), "Initial matrix size is invalid!"
         assert all(0 <= cell <= N for row in initial_matrix for cell in row), "Initial matrix value is invalid"
         
         KillerSudoku.N = N
-        self.board: Board = Board(N, initial_matrix, cage_constraints)
+        self.board: Board = Board(N, initial_matrix, cage_constraints, pre_sum)
         self.back_track_count = 0
 
     def solve(self):
@@ -28,6 +28,7 @@ class KillerSudoku:
             print("No solution!")
         print("Time elapse: ", t)
         print("Back track count ", self.back_track_count)
+        return t
 
     def solve_index(self, index):
         cell = self.board[index]
@@ -36,7 +37,7 @@ class KillerSudoku:
         if cell == None:
             return True
 
-        next_index = (index[0], index[1] + 1) if index[1] != self.N else (index[0] + 1, 1)
+        next_index = (index[0], index[1] + 1) if index[1] < self.N else (index[0] + 1, 1)
         while True:
 
             if cell.is_fixed:
@@ -55,4 +56,12 @@ class KillerSudoku:
 
         self.back_track_count += 1
         cell.reset_values()
+
+        if self.back_track_count % 500000 == 0:
+            print("back tracking", self.back_track_count)
+            self.board.print()
+
+        if self.back_track_count >= 10000000:
+            return False
+
         return False

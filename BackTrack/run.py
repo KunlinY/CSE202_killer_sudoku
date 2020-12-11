@@ -2,6 +2,7 @@ import time
 
 from killer_sudoku import KillerSudoku
 import cProfile
+import pandas as pd
 
 
 if __name__ == "__main__":
@@ -49,7 +50,51 @@ if __name__ == "__main__":
         (17, [(9, 8), (9, 9)]),
     ]
 
-    cProfile.run('KillerSudoku(N, initial_matrix, cage_constraints).solve()')
+    killer_log = []
+    normal_log = []
+    for N in [4, 9, 16]:
+        initial_matrix = [list(0 for _ in range(N)) for _ in range(N)]
+        for l in range(2, N):
+            cage_constraints = eval(open(f"../sudokus/{N}_{l}_killer.txt").read())
+            
+            print("Killer", N, l)
 
-    sudoku = KillerSudoku(N, initial_matrix, cage_constraints)
-    sudoku.solve()
+            for i in range(1):
+                sudoku = KillerSudoku(N, initial_matrix, cage_constraints)
+                t = sudoku.solve()
+                killer_log.append(("backtrack with new rules", N, l, t))
+            log = pd.DataFrame(killer_log, columns=["method", "N", "Max cage length", "Time"])
+            log.to_csv("killer_temp.csv")
+
+            # for i in range(3):
+            #     sudoku = KillerSudoku(N, initial_matrix, cage_constraints, False)
+            #     t = sudoku.solve()
+            #     killer_log.append(("backtrack with no new rules", N, l, t))
+            # log = pd.DataFrame(killer_log, columns=["method", "N", "Max cage length", "Time"])
+            # log.to_csv("killer_temp.csv")
+            # log = pd.DataFrame(normal_log, columns=["N", "Empty cell percentage", "Time"])
+            # log.to_csv("normal_temp.csv")
+
+        for p in range(5, 100, 5):
+            p = float(p / 100.0)
+            matrix = eval(open(f"../sudokus/{N}_{p:.2f}_normal.txt").read())
+
+            print("Normal", N, p)
+
+            for i in range(3):
+                sudoku = KillerSudoku(N, matrix, [])
+                t = sudoku.solve()
+                normal_log.append((N, p, t))
+
+            log = pd.DataFrame(normal_log, columns=["N", "Empty cell percentage", "Time"])
+            log.to_csv("normal_temp.csv")
+
+    # log = pd.DataFrame(killer_log, columns=["method", "N", "Max cage length", "Time"])
+    # log.to_csv("killer.csv")
+    # log = pd.DataFrame(normal_log, columns=["N", "Empty cell percentage", "Time"])
+    # log.to_csv("normal.csv")
+
+    # cProfile.run('KillerSudoku(N, initial_matrix, cage_constraints).solve()')
+
+    # sudoku = KillerSudoku(N, initial_matrix, cage_constraints)
+    # sudoku.solve()

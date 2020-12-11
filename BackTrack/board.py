@@ -1,24 +1,26 @@
 from cell import Cell
+import math
 
 class Board:
 
-    def __init__(self, N: int, matrix: list, cage_constraints: list):
+    def __init__(self, N: int, matrix: list, cage_constraints: list, pre_sum: bool = True):
 
         self.N = N
 
         # list all possible combinations for certain length and sum
-        self.length_sum_candidates_map = dict([(l, {}) for l in range(2, N)])
-        for v in get_possible_combinations(N - 1, 1, N + 1):
-            l = len(v)
-            s = sum(v)
+        if pre_sum:    
+            self.length_sum_candidates_map = dict([(l, {}) for l in range(2, N)])
+            for v in get_possible_combinations(N - 1, 1, N + 1):
+                l = len(v)
+                s = sum(v)
 
-            if l == 1:
-                continue
+                if l == 1:
+                    continue
 
-            if s not in self.length_sum_candidates_map[l].keys():
-                self.length_sum_candidates_map[l][s] = []
+                if s not in self.length_sum_candidates_map[l].keys():
+                    self.length_sum_candidates_map[l][s] = []
 
-            self.length_sum_candidates_map[l][s].append(v)
+                self.length_sum_candidates_map[l][s].append(v)
 
         # initialize board with given matrix
         self._board = [[Cell(value, value != 0) for value in row] for row in matrix]
@@ -29,7 +31,8 @@ class Board:
             l = len(cells)
             for cell in cells:
                 if not self._safe_get(cell).is_fixed:
-                    self._safe_get(cell).candidates = set(sum(self.length_sum_candidates_map[l][s], []))
+                    if pre_sum:
+                        self._safe_get(cell).candidates = set(sum(self.length_sum_candidates_map[l][s], []))
                     self.cell_cage_map[cell] = (s, cells)
 
         for row in range(1, N + 1):
@@ -39,6 +42,8 @@ class Board:
                     cell.candidates = set(range(1, N + 1))
 
         # trim candidates based on given row, column and nonet constraints
+        box_size = int(math.sqrt(self.N))
+        self.box_size = box_size
         for row in range(1, N + 1):
             for col in range(1, N + 1):
                 cell = self._safe_get((row, col))
@@ -55,10 +60,10 @@ class Board:
                         if value in neighbour.candidates:
                             neighbour.candidates.remove(value)
 
-                    nonet_row = int((row - 1) / 3) * 3 + 1
-                    nonet_col = int((col - 1) / 3) * 3 + 1
-                    for r in range(nonet_row, nonet_row + 3):
-                        for c in range(nonet_col, nonet_col + 3):
+                    nonet_row = int((row - 1) / box_size) * box_size + 1
+                    nonet_col = int((col - 1) / box_size) * box_size + 1
+                    for r in range(nonet_row, nonet_row + box_size):
+                        for c in range(nonet_col, nonet_col + box_size):
                             neighbour = self._safe_get((r, c))
                             if value in neighbour.candidates:
                                 neighbour.candidates.remove(value)
@@ -95,10 +100,10 @@ class Board:
             if i != col and self._safe_get((row, i)).value == cell.value:
                 return False
 
-            nonet_row = int((row - 1) / 3) * 3 + 1
-            nonet_col = int((col - 1) / 3) * 3 + 1
-            for r in range(nonet_row, nonet_row + 3):
-                for c in range(nonet_col, nonet_col + 3):
+            nonet_row = int((row - 1) / self.box_size) * self.box_size + 1
+            nonet_col = int((col - 1) / self.box_size) * self.box_size + 1
+            for r in range(nonet_row, nonet_row + self.box_size):
+                for c in range(nonet_col, nonet_col + self.box_size):
                     if r != row and c != col and self._safe_get((r, c)).value == cell.value:
                         return False
 
